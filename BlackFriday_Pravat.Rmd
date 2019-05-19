@@ -342,3 +342,105 @@ dataset <- rbind(training_data, test_data)
 ```
 
 So, we see that `2403` number of records are identified as outliers and are removed from the training set. Once the outliers are removed from the training set, we again merge the training and test dataset so that we can apply feature engineering process on the whole dataset.
+
+
+# Feature Engineering
+
+This is the section to give free rein to our imagination and create/modify all the features that might improve the final result.
+
+## Feature creation
+
+```{r Feature creation}
+training_data <- dataset[dataset$dataType == "train",]
+test_data <- dataset[dataset$dataType == "test",]
+
+# feature representing the count of each user
+userIDCount <- as.data.table(table(training_data$User_ID))
+colnames(userIDCount) <- c("User_ID","User_ID_Count")
+
+training_data <- merge(x = training_data, y = userIDCount, by = "User_ID", all.x = TRUE)
+test_data <- merge(x = test_data, y = userIDCount, by = "User_ID", all.x = TRUE)
+
+sum(is.na(test_data$User_ID_Count))
+
+# feature representing the count of each product
+productIDCount <- as.data.table(table(training_data$Product_ID))
+colnames(productIDCount) <- c("Product_ID","Product_ID_Count")
+
+training_data <- merge(x = training_data, y = productIDCount, by = "Product_ID", all.x = TRUE)
+test_data <- merge(x = test_data, y = productIDCount, by = "Product_ID", all.x = TRUE)
+
+sum(is.na(test_data$Product_ID_Count))
+
+# feature representing the average Purchase of each product
+productIDMean <- ddply(training_data, .(Product_ID), summarize, Product_Mean=mean(Purchase))
+
+training_data <- merge(x = training_data, y = productIDMean, by = "Product_ID", all.x = TRUE)
+test_data <- merge(x = test_data, y = productIDMean, by = "Product_ID", all.x = TRUE)
+
+sum(is.na(test_data$Product_Mean))
+test_data$Product_Mean[is.na(test_data$Product_Mean)] <- mean(training_data$Purchase)
+
+# feature representing the average Purchase by each user
+userIDMean <- ddply(training_data, .(User_ID), summarize, User_Mean=mean(Purchase))
+
+training_data <- merge(x = training_data, y = userIDMean, by = "User_ID", all.x = TRUE)
+test_data <- merge(x = test_data, y = userIDMean, by = "User_ID", all.x = TRUE)
+
+sum(is.na(test_data$Product_Mean))
+
+# feature representing the proportion of times the user purchases the product more than the product's average
+training_data$flag_high_product <- ifelse(training_data$Purchase > training_data$Product_Mean, 1, 0)
+user_high_product <- ddply(training_data, .(User_ID), summarize, User_High_Product = mean(flag_high_product))
+
+training_data <- merge(training_data, user_high_product, by="User_ID", all.x = TRUE)
+test_data <- merge(test_data, user_high_product, by="User_ID", all.x = TRUE)
+
+sum(is.na(test_data$User_High_Product))
+
+training_data[, c("flag_high_product") := NULL]
+
+# feature representing the proportion of times the user purchases more than the his/her own average
+training_data$flag_high_user <- ifelse(training_data$Purchase > training_data$User_Mean, 1, 0)
+user_high_self <- ddply(training_data, .(User_ID), summarize, User_High_Self = mean(flag_high_user))
+
+training_data <- merge(training_data, user_high_self, by="User_ID", all.x = TRUE)
+test_data <- merge(test_data, user_high_self, by="User_ID", all.x = TRUE)
+
+sum(is.na(test_data$User_High_Self))
+
+training_data[, c("flag_high_user") := NULL]
+
+# Merge the train and test
+dataset <- rbind(training_data, test_data)
+```
+
+## Feature transformation
+
+```{r Feature transformation}
+# Fill the unknown values in product category 2 and 3
+na_idx_pcat_2 <- dataset$Product_Category_2 == "UKN"
+dataset[na_idx_pcat_2,]$Product_Category_2 <- dataset[na_idx_pcat_2,]$Product_Category_1
+dataset$Product_Category_2 <- as.factor(as.character(dataset$Product_Category_2))
+
+na_idx_pcat_3 <- dataset$Product_Category_3 == "UKN"
+dataset[na_idx_pcat_3,]$Product_Category_3 <- dataset[na_idx_pcat_3,]$Product_Category_2
+dataset$Product_Category_3 <- as.factor(as.character(dataset$Product_Category_3))
+```
+
+# Skewness
+
+While building predictive models we often see skewness in the target variable. Then we generally take transformations to make it more normal. We generally do it for linear models and not for tree based models. This actually means that our distribution is not normal, we are deliberately making it normal for prediction.
+
+The way of getting rid of the skewness is to use the `log` (or the `log1p`) of the values of that feature, to flatten it. To reduce right skewness, take roots or logarithms or reciprocals (x to 1/x). This is the commonest problem in practice. To reduce left skewness, take squares or cubes or higher powers.
+
+We now need to detect skewness in the Target value.
+
+```{r Check skewness}
+skewness(dataset$Purchase) #0.4091141 (Positive or right skewed, moderately skewed)
+
+ggplot(dataset, aes(x = Purchase)) +
+  geom_histogram()	
+```
+
+We can see that the traget variable has a skewness of around 0.4, which means that the data is moderately skewed. In such case, let's not take any action for skewness transformation.
