@@ -7,7 +7,13 @@ output:
   pdf_document: default
 ---
 
+# GitHub Source
+
+https://github.com/pasayatpravat/Black_Friday_R.git
+
+
 # Global setup and Library import
+
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, warning=FALSE)
 
@@ -18,11 +24,13 @@ library(e1071)          # For skewness
 library(plyr)           # Iterative operations
 ```
 
+
 # Introduction
 
 The dataset here is a sample of the transactions made in a retail store. The store wants to know better the customer purchase behaviour against different products. Specifically, here the problem is a regression problem where we are trying to predict the dependent variable (the amount of purchase) with the help of the information contained in the other variables.
 
 Classification problem can also be settled in this dataset since several variables are categorical, and some other approaches could be "Predicting the age of the consumer" or even "Predict the category of goods bought". This dataset is also particularly convenient for clustering and maybe find different clusters of consumers within it.
+
 
 # CONTENT:
 
@@ -40,6 +48,7 @@ Both Dataset have the following fields, except Purchase - which is not available
 10. Product_Category_2: Sub-category on the Product_Category_1
 11. Product_Category_3: Sub-category on the Product_Category_2
 12. Purchase: Target variable. Monitary amount of purchase
+
 
 # Useful Functions
 
@@ -60,6 +69,7 @@ mape<-function(real,predicted){
   return(mean(abs((real-predicted)/real)))
 }
 ```
+
 
 # Data Reading and preparation
 
@@ -106,7 +116,6 @@ ggplot(original_training_data[, list(percent_purchase = round(sum(Purchase)/sum(
 ```
 
 This shows that purchases done by `Male` are more than 3 times of that done by `Female`.
-
 
 ## Purchase by Age group
 
@@ -243,6 +252,7 @@ ggplot(purchase_pcat3, aes(as.factor(Product_Category_3), percentage_purchase_pc
   labs(title= "Percentage Purchase per Product_Category_3")
 ```
 
+
 # Data Cleaning and Correction
 
 ## Factorize features
@@ -256,7 +266,6 @@ convert_to_cat_columns <- c("User_ID","Product_ID", "Occupation", "Marital_Statu
 # Do the conversion
 dataset[ , (convert_to_cat_columns) := lapply(.SD, as.factor), .SDcols = convert_to_cat_columns]
 ```
-
 
 ## Hunting NAs
 
@@ -303,7 +312,6 @@ dataset$Product_Category_3 = factor(dataset$Product_Category_3,
 dataset$Product_Category_2[is.na(dataset$Product_Category_2)] <- "UKN";
 dataset$Product_Category_3[is.na(dataset$Product_Category_3)] <- "UKN";
 ```
-
 
 ## Outliers
 We will now focus on numerical values. The main problem with numerical values are outliers (values which largely differ from the rest). Outliers can mislead the training of our models resulting in less accurate models and ultimately worse results.
@@ -428,6 +436,7 @@ dataset[na_idx_pcat_3,]$Product_Category_3 <- dataset[na_idx_pcat_3,]$Product_Ca
 dataset$Product_Category_3 <- as.factor(as.character(dataset$Product_Category_3))
 ```
 
+
 # Skewness
 
 While building predictive models we often see skewness in the target variable. Then we generally take transformations to make it more normal. We generally do it for linear models and not for tree based models. This actually means that our distribution is not normal, we are deliberately making it normal for prediction.
@@ -461,6 +470,7 @@ training_data_split <- splitdt(training_data, 0.1, 123)
 training_data_subsample <- training_data_split$test
 ```
 
+
 # Model creation and evaluation
 
 In this section we will explore different types of models.
@@ -479,34 +489,38 @@ train_control<- trainControl(method="cv",
 
 Let's build a Random Forest model using differnet grid parameters and training control parameters, mentioned previously.
 
-```{--r Random forest}
-set.seed(1234)
+```{r Random forest}
+# I am not executing the RF as this is not my best model and it takes a lot of time for computation.
 
-cv_rf<- caret::train(Purchase~., 
-                     data=training_data_subsample[, -c("User_ID", "Product_ID")],
-                     trControl=train_control,
-                     method="rf",
-                     metric="RMSE",
-                     tuneGrid= expand.grid(.mtry=c(6,8,10,12,14)),
-                     verbose=T, 
-                     importance=T)
-
-# Best tunning parameters obtained
-cv_rf$bestTune # .mtry = 10
-
-# Random Forest (No. Of Trees Vs Error)
-plot(cv_rf$finalModel, main = "Random Forest (No. Of Trees Vs Error)") #ntree = 100
-
-# Random Forest (No. Of Predictors Vs Accuracy
-plot(cv_rf, main = "Random Forest (No. Of Predictors Vs Accuracy)")
-
-# Top 20 important variable
-plot(varImp(cv_rf), main = "Variance Importance RandomForest", top = 20)
-
-# Predict for the rest of the training data
-train_pred_remaining <- predict(cv_rf, training_data_split$train)
-
-mape(training_data_split$train$Purchase,train_pred_remaining) #35%
+if(F){
+  set.seed(1234)
+  
+  cv_rf<- caret::train(Purchase~., 
+                       data=training_data_subsample[, -c("User_ID", "Product_ID")],
+                       trControl=train_control,
+                       method="rf",
+                       metric="RMSE",
+                       tuneGrid= expand.grid(.mtry=c(6,8,10,12,14)),
+                       verbose=T, 
+                       importance=T)
+  
+  # Best tunning parameters obtained
+  cv_rf$bestTune # .mtry = 10
+  
+  # Random Forest (No. Of Trees Vs Error)
+  plot(cv_rf$finalModel, main = "Random Forest (No. Of Trees Vs Error)") #ntree = 100
+  
+  # Random Forest (No. Of Predictors Vs Accuracy
+  plot(cv_rf, main = "Random Forest (No. Of Predictors Vs Accuracy)")
+  
+  # Top 20 important variable
+  plot(varImp(cv_rf), main = "Variance Importance RandomForest", top = 20)
+  
+  # Predict for the rest of the training data
+  train_pred_remaining <- predict(cv_rf, training_data_split$train)
+  
+  mape(training_data_split$train$Purchase,train_pred_remaining) #35%
+}
 ```
 
 ## XG BOOST
@@ -582,4 +596,24 @@ As XG Boost performed better that Random Forest, let's just predict the target f
 
 # Predict the Target variable for the TEST data using XG Boost
 final_pred_xgboost <- predict(cv_xgboost, test_data)
+```
+
+
+# Final Submission
+
+In this section, we try to create CSV file for the submission.
+
+As XGBoost performed the beest, we will do submission for XGBoost.
+
+```{r Final Submission}
+# Assign the output of either XGBoost or RF
+final_pred_sub <- final_pred_xgboost
+
+# Create the DataTable with Submission file format
+submission <- data.table(User_ID = test_data$User_ID, 
+                         Product_ID = test_data$Product_ID,
+                         Purchase= final_pred_sub)
+
+# Assign the strings to the according integer 
+write.csv(submission, file = "Black_Friday_Final_Submission_v3.csv", row.names = FALSE)
 ```
