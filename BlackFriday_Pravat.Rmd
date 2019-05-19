@@ -444,3 +444,142 @@ ggplot(dataset, aes(x = Purchase)) +
 ```
 
 We can see that the traget variable has a skewness of around 0.4, which means that the data is moderately skewed. In such case, let's not take any action for skewness transformation.
+
+
+# Train, Test and Validation Spliting
+
+To facilitate the data cleaning and feature engineering we merged train and test datasets. We now split them again to create our final model.
+
+```{r Train test split}
+training_data <- dataset[dataset$dataType == "train",]
+test_data <- dataset[dataset$dataType == "test",]
+
+training_data$dataType <- NULL
+test_data$dataType <- NULL
+
+training_data_split <- splitdt(training_data, 0.1, 123)
+training_data_subsample <- training_data_split$test
+```
+
+# Model creation and evaluation
+
+In this section we will explore different types of models.
+
+Before starting model building, let's set the model training control parameters.
+
+```{r train control}
+train_control<- trainControl(method="cv", 
+                             number=5,  
+                             search="grid", 
+                             savePredictions = T, 
+                             verboseIter = T)
+```
+
+## Random Forest
+
+Let's build a Random Forest model using differnet grid parameters and training control parameters, mentioned previously.
+
+```{--r Random forest}
+set.seed(1234)
+
+cv_rf<- caret::train(Purchase~., 
+                     data=training_data_subsample[, -c("User_ID", "Product_ID")],
+                     trControl=train_control,
+                     method="rf",
+                     metric="RMSE",
+                     tuneGrid= expand.grid(.mtry=c(6,8,10,12,14)),
+                     verbose=T, 
+                     importance=T)
+
+# Best tunning parameters obtained
+cv_rf$bestTune # .mtry = 10
+
+# Random Forest (No. Of Trees Vs Error)
+plot(cv_rf$finalModel, main = "Random Forest (No. Of Trees Vs Error)") #ntree = 100
+
+# Random Forest (No. Of Predictors Vs Accuracy
+plot(cv_rf, main = "Random Forest (No. Of Predictors Vs Accuracy)")
+
+# Top 20 important variable
+plot(varImp(cv_rf), main = "Variance Importance RandomForest", top = 20)
+
+# Predict for the rest of the training data
+train_pred_remaining <- predict(cv_rf, training_data_split$train)
+
+mape(training_data_split$train$Purchase,train_pred_remaining) #35%
+```
+
+## XG BOOST
+
+Let's build a XG Boost model using differnet grid parameters and training control parameters, mentioned previously.
+
+```{r XG BOOST}
+set.seed(12345)
+if(F){
+  tuneGridXGB <- expand.grid(
+    eta = c(0.01, 0.1),
+    max_depth = c(6, 8, 10),
+    gamma = c(0.1, 1, 5),
+    colsample_bytree = c(0.5, 0.75),
+    min_child_weight = c(2, 5),
+    subsample = c(0.50, 0.75),
+    nrounds=c(150, 500)
+  )
+}
+
+# For quick run: with optimize grid parameters
+tuneGridXGB <- expand.grid(
+  eta = c(0.01),
+  max_depth = c(6),
+  gamma = c(1),
+  colsample_bytree = c(0.75),
+  min_child_weight = c(5),
+  subsample = c(0.5),
+  nrounds=c(500)
+)
+
+# train the xgboost learner
+cv_xgboost <- caret::train(Purchase~., 
+                           data = training_data_subsample[, -c("User_ID", "Product_ID")],
+                           method = 'xgbTree',
+                           metric = 'RMSE',
+                           trControl = train_control,
+                           tuneGrid = tuneGridXGB,
+                           verbose = T, 
+                           importance = T)
+
+# Best tunning parameters obtained
+cv_xgboost$bestTune
+
+#nrounds  max_depth  eta   gamma  colsample_bytree  min_child_weight   subsample
+#500         6       0.01    1         0.75                 5             0.5
+
+# Let's check the model summary
+# plot(cv_xgboost, main = "XGBoost Summary")
+
+# Top 20 important variable
+plot(varImp(cv_xgboost), main = "Variance Importance XGBoost", top = 20)
+
+# Predict for the rest of the training data
+train_pred_remaining <- predict(cv_xgboost, training_data_split$train)
+
+# Calculate MAPE for the predicted values
+mape(training_data_split$train$Purchase,train_pred_remaining) #26.63568%
+```
+
+## Model Prediction
+
+In this section, we will predict the Target variable of the TEST dataset using previously created ML models such as
+
+1. Random Forest
+2. XG Boost 
+
+As XG Boost performed better that Random Forest, let's just predict the target for TEST dataset.
+
+```{r Predict}
+# Predict the Target variable for the TEST data using Random Forest
+#final_pred_rf <- predict(cv_rf, test_data)
+
+# Predict the Target variable for the TEST data using XG Boost
+final_pred_xgboost <- predict(cv_xgboost, test_data)
+```
