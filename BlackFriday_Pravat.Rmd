@@ -89,3 +89,157 @@ Let's now visualize the dataset to see where to begin
 summary(dataset)
 ```
 We can see some problems just by taking a look to the summary: the dataset has missing values, there are some categorical columns codified as numeric, it has different scales for the feature values. In addition, we will take a deeper look to the data to detect more subtle issues: correlation between features, skewness in the feature values.
+
+
+# EDA - Exploratory Data Analysis
+
+Let's now visualize the dataset to get some insights that we can use during feature engineering.
+
+## Distribution of Purchase by Gender
+
+```{r Puchase vs Gender, echo=FALSE}
+ggplot(original_training_data[, list(percent_purchase = round(sum(Purchase)/sum(original_training_data$Purchase), 2)), by = "Gender"], 
+       aes(x="", y=percent_purchase, fill=Gender)) + 
+  geom_bar(width = 1, stat = "identity") +
+  coord_polar("y", start=0) +
+  labs(title= "Percentage Purchase by Gender")
+```
+
+This shows that purchases done by `Male` are more than 3 times of that done by `Female`.
+
+
+## Purchase by Age group
+
+```{r Puchase vs Age group, echo=FALSE}
+purchase_age <- original_training_data[, 
+                                       list(percentage_purchase_age = 100 * sum(Purchase)/sum(original_training_data$Purchase)), 
+                                       by=c('Age')]
+
+purchase_age[order(-percentage_purchase_age),]
+ggplot(purchase_age, aes(Age, percentage_purchase_age), fill=Age) +
+  geom_col(col = "brown3") + 
+  ylab("Percentage Purchase") + 
+  xlab("Age") + 
+  theme_minimal() + 
+  labs(title= "Percentage Purchase per Age group")
+```
+
+## Purchase by Occupation
+
+```{r Puchase vs Occupation, echo=FALSE}
+purchase_occupation <- original_training_data[, 
+                                              list(percentage_purchase_occupation = 100 * sum(Purchase)/sum(original_training_data$Purchase)), 
+                                              by=c('Occupation')]
+
+purchase_occupation[order(-percentage_purchase_occupation),]
+
+ggplot(purchase_occupation, aes(as.factor(Occupation), percentage_purchase_occupation), fill=Occupation) +
+  geom_col(col = "brown3") + 
+  ylab("Percentage Purchase") + 
+  xlab("Occupation") + 
+  theme_minimal() + 
+  labs(title= "Percentage Purchase per Occupation")
+```
+
+## Purchase by City Category
+
+```{r Puchase vs City Category, echo=FALSE}
+purchase_city <- original_training_data[, 
+                                        list(percentage_purchase_city = 100 * sum(Purchase)/sum(original_training_data$Purchase)), 
+                                        by=c('City_Category')]
+
+purchase_city[order(-percentage_purchase_city),]
+
+ggplot(purchase_city, aes(City_Category, percentage_purchase_city), fill=City_Category) +
+  geom_col(col = "brown3") + 
+  ylab("Percentage Purchase") + 
+  xlab("City_Category") + 
+  theme_minimal() + 
+  labs(title= "Percentage Purchase per City Category")
+```
+
+## Purchase by Stay_In_Current_City_Years
+
+```{r Puchase vs Stay_In_Current_City_Years, echo=FALSE}
+purchase_stay <- original_training_data[, 
+                                        list(percentage_purchase_stay = 100 * sum(Purchase)/sum(original_training_data$Purchase)), 
+                                        by=c('Stay_In_Current_City_Years')]
+
+purchase_stay[order(-percentage_purchase_stay),]
+
+ggplot(purchase_stay, aes(Stay_In_Current_City_Years, percentage_purchase_stay), fill=Stay_In_Current_City_Years) +
+  geom_col(col = "brown3") + 
+  ylab("Percentage Purchase") + 
+  xlab("Stay_In_Current_City_Years") + 
+  theme_minimal() + 
+  labs(title= "Percentage Purchase per Stay_In_Current_City_Years")
+```
+
+## Purchase by Marital_Status
+
+```{r Puchase vs Marital_Status, echo=FALSE}
+purchase_mstatus <- original_training_data[, 
+                                           list(percentage_purchase_mstatus = 100 * sum(Purchase)/sum(original_training_data$Purchase)), 
+                                           by=c('Marital_Status')]
+
+purchase_mstatus[order(-percentage_purchase_mstatus),]
+
+ggplot(purchase_mstatus, aes(as.factor(Marital_Status), percentage_purchase_mstatus), fill=Marital_Status) +
+  geom_col(col = "brown3") + 
+  ylab("Percentage Purchase") + 
+  xlab("Marital_Status") + 
+  theme_minimal() + 
+  labs(title= "Percentage Purchase per Marital_Status")
+```
+
+## Purchase by Product_Category_1
+
+```{r Puchase vs Product_Category_1, echo=FALSE}
+purchase_pcat1 <- original_training_data[, 
+                                         list(percentage_purchase_pcat1 = 100 * sum(Purchase)/sum(original_training_data$Purchase)), 
+                                         by=c('Product_Category_1')]
+
+purchase_pcat1[order(-percentage_purchase_pcat1),]
+
+ggplot(purchase_pcat1, aes(as.factor(Product_Category_1), percentage_purchase_pcat1), fill=Product_Category_1) +
+  geom_col(col = "brown3") + 
+  ylab("Percentage Purchase") + 
+  xlab("Product_Category_1") + 
+  theme_minimal() + 
+  labs(title= "Percentage Purchase per Product_Category_1")
+```
+
+## Purchase by Product_Category_2
+
+```{r Puchase vs Product_Category_2, echo=FALSE}
+purchase_pcat2 <- original_training_data[, 
+                                         list(percentage_purchase_pcat2 = 100 * sum(Purchase, na.rm = T)/sum(original_training_data$Purchase, na.rm = T)), 
+                                         by=c('Product_Category_2')]
+
+purchase_pcat2[order(-percentage_purchase_pcat2),]
+
+ggplot(purchase_pcat2, aes(as.factor(Product_Category_2), percentage_purchase_pcat2), fill=Product_Category_2) +
+  geom_col(col = "brown3") + 
+  ylab("Percentage Purchase") + 
+  xlab("Product_Category_2") + 
+  theme_minimal() + 
+  labs(title= "Percentage Purchase per Product_Category_2")
+```
+
+## Purchase by Product_Category_3
+
+```{r Puchase vs Product_Category_3, echo=FALSE}
+purchase_pcat3 <- original_training_data[, 
+                                         list(percentage_purchase_pcat3 = 100 * sum(Purchase, na.rm = T)/sum(original_training_data$Purchase, na.rm = T)), 
+                                         by=c('Product_Category_3')]
+
+purchase_pcat3[order(-percentage_purchase_pcat3),]
+
+ggplot(purchase_pcat3, aes(as.factor(Product_Category_3), percentage_purchase_pcat3), fill=Product_Category_3) +
+  geom_col(col = "brown3") + 
+  ylab("Percentage Purchase") + 
+  xlab("Product_Category_3") + 
+  theme_minimal() + 
+  labs(title= "Percentage Purchase per Product_Category_3")
+```
+
