@@ -15,7 +15,7 @@ https://github.com/pasayatpravat/Black_Friday_R.git
 # Global setup and Library import
 
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = TRUE, warning=FALSE)
+knitr::opts_chunk$set(echo = T, warning = F)
 
 library(data.table)
 library(caret)          # To enable training with CV.
@@ -54,19 +54,19 @@ Both Dataset have the following fields, except Purchase - which is not available
 
 ```{r Useful functions}
 # Function to split the dataset randomly with a given propert
-splitdt <- function(dt, test_proportion=0.2, seed=NULL){
+splitdt <- function(dt, test_proportion = 0.2, seed = NULL){
   if(!is.null(seed)) set.seed(seed)
   
-  train_index <- sample(nrow(dt), floor(nrow(dt)*(1-test_proportion)), replace = FALSE)
-  trainset<-dt[train_index]
-  testset<-dt[-train_index]
+  train_index <- sample(nrow(dt), floor(nrow(dt) * (1 - test_proportion)), replace = F)
+  trainset <- dt[train_index]
+  testset <- dt[-train_index]
   
-  return(list(train=trainset, test=testset))
+  return(list(train = trainset, test = testset))
 }
 
 # MAPE metric
-mape<-function(real,predicted){
-  return(mean(abs((real-predicted)/real)))
+mape <- function(real, predicted){
+  return(mean(abs((real - predicted)/real)))
 }
 ```
 
@@ -109,147 +109,116 @@ Let's now visualize the dataset to get some insights that we can use during feat
 
 ```{r Puchase vs Gender, echo=FALSE}
 ggplot(original_training_data[, list(percent_purchase = round(sum(Purchase)/sum(original_training_data$Purchase), 2)), by = "Gender"], 
-       aes(x="", y=percent_purchase, fill=Gender)) + 
+       aes(x = "", y = percent_purchase, fill = Gender)) + 
   geom_bar(width = 1, stat = "identity") +
-  coord_polar("y", start=0) +
-  labs(title= "Percentage Purchase by Gender")
+  coord_polar("y", start = 0) +
+  labs(title = "Percentage Purchase by Gender")
 ```
 
 This shows that purchases done by `Male` are more than 3 times of that done by `Female`.
 
 ## Purchase by Age group
 
-```{r Puchase vs Age group, echo=FALSE}
-purchase_age <- original_training_data[, 
-                                       list(percentage_purchase_age = 100 * sum(Purchase)/sum(original_training_data$Purchase)), 
-                                       by=c('Age')]
+```{r Puchase vs Age group, echo = FALSE}
+purchase_age <- original_training_data[, list(percentage_purchase_age = 100 * sum(Purchase)/sum(original_training_data$Purchase)), by = c("Age")]
 
-purchase_age[order(-percentage_purchase_age),]
-ggplot(purchase_age, aes(Age, percentage_purchase_age), fill=Age) +
+ggplot(purchase_age, aes(Age, percentage_purchase_age), fill = Age) +
   geom_col(col = "brown3") + 
   ylab("Percentage Purchase") + 
   xlab("Age") + 
   theme_minimal() + 
-  labs(title= "Percentage Purchase per Age group")
+  labs(title = "Percentage Purchase per Age group")
 ```
 
 ## Purchase by Occupation
 
 ```{r Puchase vs Occupation, echo=FALSE}
-purchase_occupation <- original_training_data[, 
-                                              list(percentage_purchase_occupation = 100 * sum(Purchase)/sum(original_training_data$Purchase)), 
-                                              by=c('Occupation')]
+purchase_occupation <- original_training_data[, list(percentage_purchase_occupation = 100 * sum(Purchase)/sum(original_training_data$Purchase)), by = c("Occupation")]
 
-purchase_occupation[order(-percentage_purchase_occupation),]
-
-ggplot(purchase_occupation, aes(as.factor(Occupation), percentage_purchase_occupation), fill=Occupation) +
+ggplot(purchase_occupation, aes(as.factor(Occupation), percentage_purchase_occupation), fill = Occupation) +
   geom_col(col = "brown3") + 
   ylab("Percentage Purchase") + 
   xlab("Occupation") + 
   theme_minimal() + 
-  labs(title= "Percentage Purchase per Occupation")
+  labs(title = "Percentage Purchase per Occupation")
 ```
 
 ## Purchase by City Category
 
 ```{r Puchase vs City Category, echo=FALSE}
-purchase_city <- original_training_data[, 
-                                        list(percentage_purchase_city = 100 * sum(Purchase)/sum(original_training_data$Purchase)), 
-                                        by=c('City_Category')]
+purchase_city <- original_training_data[, list(percentage_purchase_city = 100 * sum(Purchase)/sum(original_training_data$Purchase)), by = c("City_Category")]
 
-purchase_city[order(-percentage_purchase_city),]
-
-ggplot(purchase_city, aes(City_Category, percentage_purchase_city), fill=City_Category) +
+ggplot(purchase_city, aes(City_Category, percentage_purchase_city), fill = City_Category) +
   geom_col(col = "brown3") + 
   ylab("Percentage Purchase") + 
   xlab("City_Category") + 
   theme_minimal() + 
-  labs(title= "Percentage Purchase per City Category")
+  labs(title = "Percentage Purchase per City Category")
 ```
 
 ## Purchase by Stay_In_Current_City_Years
 
 ```{r Puchase vs Stay_In_Current_City_Years, echo=FALSE}
-purchase_stay <- original_training_data[, 
-                                        list(percentage_purchase_stay = 100 * sum(Purchase)/sum(original_training_data$Purchase)), 
-                                        by=c('Stay_In_Current_City_Years')]
+purchase_stay <- original_training_data[, list(percentage_purchase_stay = 100 * sum(Purchase)/sum(original_training_data$Purchase)), by = c("Stay_In_Current_City_Years")]
 
-purchase_stay[order(-percentage_purchase_stay),]
-
-ggplot(purchase_stay, aes(Stay_In_Current_City_Years, percentage_purchase_stay), fill=Stay_In_Current_City_Years) +
+ggplot(purchase_stay, aes(Stay_In_Current_City_Years, percentage_purchase_stay), fill = Stay_In_Current_City_Years) +
   geom_col(col = "brown3") + 
   ylab("Percentage Purchase") + 
   xlab("Stay_In_Current_City_Years") + 
   theme_minimal() + 
-  labs(title= "Percentage Purchase per Stay_In_Current_City_Years")
+  labs(title = "Percentage Purchase per Stay_In_Current_City_Years")
 ```
 
 ## Purchase by Marital_Status
 
 ```{r Puchase vs Marital_Status, echo=FALSE}
-purchase_mstatus <- original_training_data[, 
-                                           list(percentage_purchase_mstatus = 100 * sum(Purchase)/sum(original_training_data$Purchase)), 
-                                           by=c('Marital_Status')]
+purchase_mstatus <- original_training_data[, list(percentage_purchase_mstatus = 100 * sum(Purchase)/sum(original_training_data$Purchase)), by = c("Marital_Status")]
 
-purchase_mstatus[order(-percentage_purchase_mstatus),]
-
-ggplot(purchase_mstatus, aes(as.factor(Marital_Status), percentage_purchase_mstatus), fill=Marital_Status) +
+ggplot(purchase_mstatus, aes(as.factor(Marital_Status), percentage_purchase_mstatus), fill = Marital_Status) +
   geom_col(col = "brown3") + 
   ylab("Percentage Purchase") + 
   xlab("Marital_Status") + 
   theme_minimal() + 
-  labs(title= "Percentage Purchase per Marital_Status")
+  labs(title = "Percentage Purchase per Marital_Status")
 ```
 
 ## Purchase by Product_Category_1
 
 ```{r Puchase vs Product_Category_1, echo=FALSE}
-purchase_pcat1 <- original_training_data[, 
-                                         list(percentage_purchase_pcat1 = 100 * sum(Purchase)/sum(original_training_data$Purchase)), 
-                                         by=c('Product_Category_1')]
+purchase_pcat1 <- original_training_data[, list(percentage_purchase_pcat1 = 100 * sum(Purchase)/sum(original_training_data$Purchase)), by = c("Product_Category_1")]
 
-purchase_pcat1[order(-percentage_purchase_pcat1),]
-
-ggplot(purchase_pcat1, aes(as.factor(Product_Category_1), percentage_purchase_pcat1), fill=Product_Category_1) +
+ggplot(purchase_pcat1, aes(as.factor(Product_Category_1), percentage_purchase_pcat1), fill = Product_Category_1) +
   geom_col(col = "brown3") + 
   ylab("Percentage Purchase") + 
   xlab("Product_Category_1") + 
   theme_minimal() + 
-  labs(title= "Percentage Purchase per Product_Category_1")
+  labs(title = "Percentage Purchase per Product_Category_1")
 ```
 
 ## Purchase by Product_Category_2
 
 ```{r Puchase vs Product_Category_2, echo=FALSE}
-purchase_pcat2 <- original_training_data[, 
-                                         list(percentage_purchase_pcat2 = 100 * sum(Purchase, na.rm = T)/sum(original_training_data$Purchase, na.rm = T)), 
-                                         by=c('Product_Category_2')]
+purchase_pcat2 <- original_training_data[, list(percentage_purchase_pcat2 = 100 * sum(Purchase, na.rm = T)/sum(original_training_data$Purchase, na.rm = T)), by = c("Product_Category_2")]
 
-purchase_pcat2[order(-percentage_purchase_pcat2),]
-
-ggplot(purchase_pcat2, aes(as.factor(Product_Category_2), percentage_purchase_pcat2), fill=Product_Category_2) +
+ggplot(purchase_pcat2, aes(as.factor(Product_Category_2), percentage_purchase_pcat2), fill = Product_Category_2) +
   geom_col(col = "brown3") + 
   ylab("Percentage Purchase") + 
   xlab("Product_Category_2") + 
   theme_minimal() + 
-  labs(title= "Percentage Purchase per Product_Category_2")
+  labs(title = "Percentage Purchase per Product_Category_2")
 ```
 
 ## Purchase by Product_Category_3
 
 ```{r Puchase vs Product_Category_3, echo=FALSE}
-purchase_pcat3 <- original_training_data[, 
-                                         list(percentage_purchase_pcat3 = 100 * sum(Purchase, na.rm = T)/sum(original_training_data$Purchase, na.rm = T)), 
-                                         by=c('Product_Category_3')]
+purchase_pcat3 <- original_training_data[, list(percentage_purchase_pcat3 = 100 * sum(Purchase, na.rm = T)/sum(original_training_data$Purchase, na.rm = T)), by = c("Product_Category_3")]
 
-purchase_pcat3[order(-percentage_purchase_pcat3),]
-
-ggplot(purchase_pcat3, aes(as.factor(Product_Category_3), percentage_purchase_pcat3), fill=Product_Category_3) +
+ggplot(purchase_pcat3, aes(as.factor(Product_Category_3), percentage_purchase_pcat3), fill = Product_Category_3) +
   geom_col(col = "brown3") + 
   ylab("Percentage Purchase") + 
   xlab("Product_Category_3") + 
   theme_minimal() + 
-  labs(title= "Percentage Purchase per Product_Category_3")
+  labs(title = "Percentage Purchase per Product_Category_3")
 ```
 
 
@@ -261,7 +230,7 @@ If we go back to the summary of the dataset we can identify some numerical featu
 
 ```{r Factorize features}
 # Declare the columns that needs to be converted to categorical variable
-convert_to_cat_columns <- c("User_ID","Product_ID", "Occupation", "Marital_Status", "Product_Category_1", "Product_Category_2", "Product_Category_3", "dataType")
+convert_to_cat_columns <- c("User_ID", "Product_ID", "Occupation", "Marital_Status", "Product_Category_1", "Product_Category_2", "Product_Category_3", "dataType")
 
 # Do the conversion
 dataset[ , (convert_to_cat_columns) := lapply(.SD, as.factor), .SDcols = convert_to_cat_columns]
@@ -277,7 +246,7 @@ Counting columns with null values.
 
 ```{r NAs discovery}
 na_cols <- names(which(colSums(is.na(dataset)) > 0))
-paste('There are', length(na_cols), 'columns with missing values')
+paste("There are", length(na_cols), "columns with missing values")
 
 # Number of missing values in descending order
 sort(
@@ -292,25 +261,25 @@ sort(
 sort(
   sapply(
     dataset[, .SD, .SDcols = na_cols], 
-    function(x){100*sum(is.na(x))/length(x)}
+    function(x){100 * sum(is.na(x))/length(x)}
   ), 
   decreasing = T);
 ```
 
 Here we observe that `Product_Category_2` and `Product_Category_3` columns only have missing values. `Product_Category_3` is a sub-category of `Product_Category_2`, which inturn is a sub-category of `Product_Category_1`. So `Product_Category_1` sits at highest level, while `Product_Category_3` is the most ganular level. 
 
-As of now, let's impute the missing values of these two columns with `UKN` i.e. Unknown.
+We can fill the missing `Product_Category_2` values with respective `Product_Category_1` value and missing `Product_Category_3` value with `Product_Category_2` values.
 
 ```{r Impute NAs}
-# Create a new level 'UKN' before we impute missing values with 'UKN'
-dataset$Product_Category_2 = factor(dataset$Product_Category_2,
-                                    levels=c(levels(dataset$Product_Category_2), "UKN"))
-dataset$Product_Category_3 = factor(dataset$Product_Category_3, 
-                                    levels=c(levels(dataset$Product_Category_3), "UKN"))
+# Fill the unknown values in product category 2
+na_idx_pcat_2 <- is.na(dataset$Product_Category_2)
+dataset[na_idx_pcat_2,]$Product_Category_2 <- dataset[na_idx_pcat_2,]$Product_Category_1
+dataset$Product_Category_2 <- as.factor(as.character(dataset$Product_Category_2))
 
-# Let's impute missing value now
-dataset$Product_Category_2[is.na(dataset$Product_Category_2)] <- "UKN";
-dataset$Product_Category_3[is.na(dataset$Product_Category_3)] <- "UKN";
+# Fill the unknown values in product category 3
+na_idx_pcat_3 <- is.na(dataset$Product_Category_3)
+dataset[na_idx_pcat_3,]$Product_Category_3 <- dataset[na_idx_pcat_3,]$Product_Category_2
+dataset$Product_Category_3 <- as.factor(as.character(dataset$Product_Category_3))
 ```
 
 ## Outliers
@@ -328,14 +297,14 @@ training_data <- dataset[dataset$dataType == "train",]
 test_data <- dataset[dataset$dataType == "test",]
 
 sprintf("Number of training records before outlier removal: %i", nrow(training_data))
-par(mfrow=c(2,5))
+par(mfrow=c(2, 5))
 for (col in names(training_data)) {
   if (!is.factor(training_data[[col]])){
-    print(ggplot(training_data, aes_string(y=col)) + 
+    print(ggplot(training_data, aes_string(y = col)) + 
             geom_boxplot(width = 0.1, outlier.size = 3) + 
             theme(axis.line.x = element_blank(), axis.title.x = element_blank(), 
                   axis.ticks.x = element_blank(), axis.text.x = element_blank(),
-                  legend.position="none"))
+                  legend.position = "none"))
     
     #to_remove <- boxplot.stats(training_data[[col]])$out
     
@@ -362,58 +331,58 @@ This is the section to give free rein to our imagination and create/modify all t
 training_data <- dataset[dataset$dataType == "train",]
 test_data <- dataset[dataset$dataType == "test",]
 
-# feature representing the count of each user
+# 1. feature representing the count of each user
 userIDCount <- as.data.table(table(training_data$User_ID))
-colnames(userIDCount) <- c("User_ID","User_ID_Count")
+colnames(userIDCount) <- c("User_ID", "User_ID_Count")
 
-training_data <- merge(x = training_data, y = userIDCount, by = "User_ID", all.x = TRUE)
-test_data <- merge(x = test_data, y = userIDCount, by = "User_ID", all.x = TRUE)
+training_data <- join(x = training_data, y = userIDCount, by = "User_ID", type = "left")
+test_data <- join(x = test_data, y = userIDCount, by = "User_ID", type = "left")
 
 sum(is.na(test_data$User_ID_Count))
 
-# feature representing the count of each product
+# 2. feature representing the count of each product
 productIDCount <- as.data.table(table(training_data$Product_ID))
-colnames(productIDCount) <- c("Product_ID","Product_ID_Count")
+colnames(productIDCount) <- c("Product_ID", "Product_ID_Count")
 
-training_data <- merge(x = training_data, y = productIDCount, by = "Product_ID", all.x = TRUE)
-test_data <- merge(x = test_data, y = productIDCount, by = "Product_ID", all.x = TRUE)
+training_data <- join(x = training_data, y = productIDCount, by = "Product_ID", type = "left")
+test_data <- join(x = test_data, y = productIDCount, by = "Product_ID", type = "left")
 
 sum(is.na(test_data$Product_ID_Count))
 
-# feature representing the average Purchase of each product
-productIDMean <- ddply(training_data, .(Product_ID), summarize, Product_Mean=mean(Purchase))
+# 3. feature representing the average Purchase of each product
+productIDMean <- ddply(training_data, .(Product_ID), summarize, Product_Mean = mean(Purchase))
 
-training_data <- merge(x = training_data, y = productIDMean, by = "Product_ID", all.x = TRUE)
-test_data <- merge(x = test_data, y = productIDMean, by = "Product_ID", all.x = TRUE)
+training_data <- join(x = training_data, y = productIDMean, by = "Product_ID", type = "left")
+test_data <- join(x = test_data, y = productIDMean, by = "Product_ID", type = "left")
 
 sum(is.na(test_data$Product_Mean))
 test_data$Product_Mean[is.na(test_data$Product_Mean)] <- mean(training_data$Purchase)
 
-# feature representing the average Purchase by each user
-userIDMean <- ddply(training_data, .(User_ID), summarize, User_Mean=mean(Purchase))
+# 4. feature representing the average Purchase by each user
+userIDMean <- ddply(training_data, .(User_ID), summarize, User_Mean = mean(Purchase))
 
-training_data <- merge(x = training_data, y = userIDMean, by = "User_ID", all.x = TRUE)
-test_data <- merge(x = test_data, y = userIDMean, by = "User_ID", all.x = TRUE)
+training_data <- join(x = training_data, y = userIDMean, by = "User_ID", type = "left")
+test_data <- join(x = test_data, y = userIDMean, by = "User_ID", type = "left")
 
 sum(is.na(test_data$Product_Mean))
 
-# feature representing the proportion of times the user purchases the product more than the product's average
+# 5. feature representing the proportion of times the user purchases the product more than the product's average
 training_data$flag_high_product <- ifelse(training_data$Purchase > training_data$Product_Mean, 1, 0)
 user_high_product <- ddply(training_data, .(User_ID), summarize, User_High_Product = mean(flag_high_product))
 
-training_data <- merge(training_data, user_high_product, by="User_ID", all.x = TRUE)
-test_data <- merge(test_data, user_high_product, by="User_ID", all.x = TRUE)
+training_data <- join(training_data, user_high_product, by = "User_ID", type = "left")
+test_data <- join(test_data, user_high_product, by = "User_ID", type = "left")
 
 sum(is.na(test_data$User_High_Product))
 
 training_data[, c("flag_high_product") := NULL]
 
-# feature representing the proportion of times the user purchases more than the his/her own average
+# 6. feature representing the proportion of times the user purchases more than the his/her own average
 training_data$flag_high_user <- ifelse(training_data$Purchase > training_data$User_Mean, 1, 0)
 user_high_self <- ddply(training_data, .(User_ID), summarize, User_High_Self = mean(flag_high_user))
 
-training_data <- merge(training_data, user_high_self, by="User_ID", all.x = TRUE)
-test_data <- merge(test_data, user_high_self, by="User_ID", all.x = TRUE)
+training_data <- join(training_data, user_high_self, by = "User_ID", type = "left")
+test_data <- join(test_data, user_high_self, by = "User_ID", type = "left")
 
 sum(is.na(test_data$User_High_Self))
 
@@ -421,19 +390,6 @@ training_data[, c("flag_high_user") := NULL]
 
 # Merge the train and test
 dataset <- rbind(training_data, test_data)
-```
-
-## Feature transformation
-
-```{r Feature transformation}
-# Fill the unknown values in product category 2 and 3
-na_idx_pcat_2 <- dataset$Product_Category_2 == "UKN"
-dataset[na_idx_pcat_2,]$Product_Category_2 <- dataset[na_idx_pcat_2,]$Product_Category_1
-dataset$Product_Category_2 <- as.factor(as.character(dataset$Product_Category_2))
-
-na_idx_pcat_3 <- dataset$Product_Category_3 == "UKN"
-dataset[na_idx_pcat_3,]$Product_Category_3 <- dataset[na_idx_pcat_3,]$Product_Category_2
-dataset$Product_Category_3 <- as.factor(as.character(dataset$Product_Category_3))
 ```
 
 
@@ -478,9 +434,9 @@ In this section we will explore different types of models.
 Before starting model building, let's set the model training control parameters.
 
 ```{r train control}
-train_control<- trainControl(method="cv", 
-                             number=5,  
-                             search="grid", 
+train_control<- trainControl(method = "cv", 
+                             number = 5,  
+                             search = "grid", 
                              savePredictions = T, 
                              verboseIter = T)
 ```
@@ -490,19 +446,20 @@ train_control<- trainControl(method="cv",
 Let's build a Random Forest model using differnet grid parameters and training control parameters, mentioned previously.
 
 ```{r Random forest}
-# I am not executing the RF as this is not my best model and it takes a lot of time for computation.
-
+# I commened out this code as it was taking a lot of time while knitting
 if(F){
   set.seed(1234)
   
+  # Using the optimized .mtry for quick run
   cv_rf<- caret::train(Purchase~., 
-                       data=training_data_subsample[, -c("User_ID", "Product_ID")],
-                       trControl=train_control,
-                       method="rf",
-                       metric="RMSE",
-                       tuneGrid= expand.grid(.mtry=c(6,8,10,12,14)),
-                       verbose=T, 
-                       importance=T)
+                       data = training_data_subsample[, -c("User_ID", "Product_ID")],
+                       trControl = train_control,
+                       method = "rf",
+                       metric = "RMSE",
+                       #tuneGrid = expand.grid(.mtry=c(6,8,10,12,14)),
+                       tuneGrid = expand.grid(.mtry=c(10)),
+                       verbose = T, 
+                       importance = T)
   
   # Best tunning parameters obtained
   cv_rf$bestTune # .mtry = 10
@@ -510,16 +467,16 @@ if(F){
   # Random Forest (No. Of Trees Vs Error)
   plot(cv_rf$finalModel, main = "Random Forest (No. Of Trees Vs Error)") #ntree = 100
   
-  # Random Forest (No. Of Predictors Vs Accuracy
-  plot(cv_rf, main = "Random Forest (No. Of Predictors Vs Accuracy)")
+  # Random Forest (No. Of Predictors Vs Error)
+  plot(cv_rf, main = "Random Forest (No. Of Predictors Vs Error)")
   
   # Top 20 important variable
-  plot(varImp(cv_rf), main = "Variance Importance RandomForest", top = 20)
+  plot(varImp(cv_rf), main = "Variable Importance RandomForest", top = 20)
   
   # Predict for the rest of the training data
   train_pred_remaining <- predict(cv_rf, training_data_split$train)
   
-  mape(training_data_split$train$Purchase,train_pred_remaining) #35%
+  mape(training_data_split$train$Purchase, train_pred_remaining) #28%
 }
 ```
 
@@ -529,27 +486,24 @@ Let's build a XG Boost model using differnet grid parameters and training contro
 
 ```{r XG BOOST}
 set.seed(12345)
-if(F){
-  tuneGridXGB <- expand.grid(
-    eta = c(0.01, 0.1),
-    max_depth = c(6, 8, 10),
-    gamma = c(0.1, 1, 5),
-    colsample_bytree = c(0.5, 0.75),
-    min_child_weight = c(2, 5),
-    subsample = c(0.50, 0.75),
-    nrounds=c(150, 500)
-  )
-}
 
 # For quick run: with optimize grid parameters
 tuneGridXGB <- expand.grid(
+  #eta = c(0.01, 0.1),
+  #max_depth = c(6, 8, 10),
+  #gamma = c(0.1, 1, 5),
+  #colsample_bytree = c(0.5, 0.75),
+  #min_child_weight = c(2, 5),
+  #subsample = c(0.50, 0.75),
+  #nrounds = c(150, 500)
+  
   eta = c(0.01),
   max_depth = c(6),
   gamma = c(1),
   colsample_bytree = c(0.75),
   min_child_weight = c(5),
   subsample = c(0.5),
-  nrounds=c(500)
+  nrounds = c(500)
 )
 
 # train the xgboost learner
@@ -568,17 +522,17 @@ cv_xgboost$bestTune
 #nrounds  max_depth  eta   gamma  colsample_bytree  min_child_weight   subsample
 #500         6       0.01    1         0.75                 5             0.5
 
-# Let's check the model summary
-# plot(cv_xgboost, main = "XGBoost Summary")
+# Let's check the model summary (Doesn't run with one GridParam conbination)
+#plot(cv_xgboost, main = "XGBoost Summary")
 
 # Top 20 important variable
-plot(varImp(cv_xgboost), main = "Variance Importance XGBoost", top = 20)
+plot(varImp(cv_xgboost), main = "Variable Importance XGBoost", top = 20)
 
 # Predict for the rest of the training data
 train_pred_remaining <- predict(cv_xgboost, training_data_split$train)
 
 # Calculate MAPE for the predicted values
-mape(training_data_split$train$Purchase,train_pred_remaining) #26.63568%
+mape(training_data_split$train$Purchase,train_pred_remaining) #26.64322%
 ```
 
 ## Model Prediction
@@ -602,7 +556,6 @@ final_pred_xgboost <- predict(cv_xgboost, test_data)
 # Final Submission
 
 In this section, we try to create CSV file for the submission.
-
 As XGBoost performed the beest, we will do submission for XGBoost.
 
 ```{r Final Submission}
@@ -615,5 +568,5 @@ submission <- data.table(User_ID = test_data$User_ID,
                          Purchase= final_pred_sub)
 
 # Assign the strings to the according integer 
-write.csv(submission, file = "Black_Friday_Final_Submission_v3.csv", row.names = FALSE)
+write.csv(submission, file = "Black_Friday_Final_Submission.csv", row.names = FALSE)
 ```
